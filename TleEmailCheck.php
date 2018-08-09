@@ -162,6 +162,19 @@ if(isset($_GET['t'])){
     }
 }
 
+//插件启用后自动跳转插件设置页面
+register_activation_hook(__FILE__, 'tle_email_check_activate');
+add_action('admin_init', 'tle_email_check_redirect');
+function tle_email_check_activate() {
+    add_option('tle_email_check_do_activation_redirect', true);
+}
+function tle_email_check_redirect() {
+    if (get_option('tle_email_check_do_activation_redirect', false)) {
+        delete_option('tle_email_check_do_activation_redirect');
+        wp_redirect(admin_url( 'options-general.php?page=tle-email-check' ));
+    }
+}
+
 add_action('admin_menu', 'tle_email_check_menu');
 function tle_email_check_menu(){
     add_options_page('邮箱验证', '邮箱验证', 'manage_options', 'tle-email-check', 'tle_email_check_options');
