@@ -3,7 +3,7 @@
 Plugin Name: TleEmailCheck
 Plugin URI: https://github.com/muzishanshi/TleEmailCheck
 Description:  TleEmailCheck插件可以实现带密码、邮箱验证码注册用户的功能，因修改密码、修改邮箱时，WordPress系统会自动发邮件进行验证，所以没必要在修改个人信息时增加邮箱验证，此插件解决了邮件不能发送成功的问题。
-Version: 1.0.1
+Version: 1.0.2
 Author: 二呆
 Author URI: http://www.tongleer.com
 License: 
@@ -141,7 +141,7 @@ function ts_email_check_password_text ( $text ) {
 }
 
 if(isset($_GET['t'])){
-    if($_GET['t'] == 'config'){
+    if($_GET['t'] == 'configTleEmailCheck'){
         update_option('tle_email_check', array('mailsmtp' => $_REQUEST['mailsmtp'], 'mailport' => $_REQUEST['mailport'], 'mailuser' => $_REQUEST['mailuser'], 'mailpass' => $_REQUEST['mailpass']));
     }
 	if($_GET['t'] == 'sendsms'){
@@ -157,7 +157,7 @@ if(isset($_GET['t'])){
 
 		$user_email = isset($_POST['user_email']) ? addslashes(trim($_POST['user_email'])) : '';//发送到的用户名
 		$sitetitle = isset($_POST['sitetitle']) ? addslashes(trim($_POST['sitetitle'])) : '';
-		sendMail($user_email,$sitetitle.'注册验证码','您的注册验证码是'.$_SESSION['code']);
+		sendMailCheck($user_email,$sitetitle.'注册验证码','您的注册验证码是'.$_SESSION['code']);
 		return;
     }
 }
@@ -186,7 +186,7 @@ function tle_email_check_options(){
 		<h2>邮箱验证设置:</h2>
 		作者：<a href="http://www.tongleer.com" target="_blank" title="邮箱验证">二呆</a><br />
 		<?php
-		$version=file_get_contents('http://api.tongleer.com/interface/TleEmailCheck.php?action=update&version=1');
+		$version=file_get_contents('http://api.tongleer.com/interface/TleEmailCheck.php?action=update&version=2');
 		echo $version;
 		?>
 		<form method="get" action="">
@@ -203,7 +203,7 @@ function tle_email_check_options(){
 				<input type="text" name="mailpass" value="<?=$weibo_configs["mailpass"];?>" required placeholder="smtp服务器邮箱密码" size="50" />
 			</p>
 			<p>
-				<input type="hidden" name="t" value="config" />
+				<input type="hidden" name="t" value="configTleEmailCheck" />
 				<input type="hidden" name="page" value="tle-email-check" />
 				<input type="submit" value="修改配置" />
 			</p>
@@ -220,7 +220,7 @@ function tle_email_check_options(){
 	<?php
 }
 //发送邮件
-function sendMail($email,$title,$content){
+function sendMailCheck($email,$title,$content){
 	require __DIR__ . '/email.class.php';
 	
 	$email_configs = get_settings('tle_email_check');

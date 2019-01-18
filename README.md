@@ -21,4 +21,8 @@ Q群：770956878<br />
 Github：https://github.com/muzishanshi/TleEmailCheck
 
 #### 更新记录：
+2019-01-18 V1.0.2
+
+	修改发邮件的函数名和请求参数，以防止和其他插件冲突。
+
 2018-08-09 第一版本实现
