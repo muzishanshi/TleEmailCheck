@@ -3,7 +3,7 @@
 Plugin Name: TleEmailCheck
 Plugin URI: https://github.com/muzishanshi/TleEmailCheck
 Description:  TleEmailCheck插件可以实现带密码、邮箱验证码注册用户的功能，因修改密码、修改邮箱时，WordPress系统会自动发邮件进行验证，所以没必要在修改个人信息时增加邮箱验证，此插件解决了邮件不能发送成功的问题。
-Version: 1.0.2
+Version: 1.0.3
 Author: 二呆
 Author URI: http://www.tongleer.com
 License: 
@@ -16,7 +16,7 @@ add_action('login_head','tle_email_check_head');
 add_action( 'register_form', 'tle_email_check_form' );
 function tle_email_check_form() {
 	?>
-	<script src="http://libs.baidu.com/jquery/1.11.1/jquery.min.js"></script>
+	<script src="https://libs.baidu.com/jquery/1.11.1/jquery.min.js"></script>
 	<p>
 		<label for="password">密码<br/>
 			<input id="password" class="input" type="password" tabindex="30" size="25" value="" name="password" placeholder="可选" />
@@ -186,7 +186,7 @@ function tle_email_check_options(){
 		<h2>邮箱验证设置:</h2>
 		作者：<a href="http://www.tongleer.com" target="_blank" title="邮箱验证">二呆</a><br />
 		<?php
-		$version=file_get_contents('http://api.tongleer.com/interface/TleEmailCheck.php?action=update&version=2');
+		$version=file_get_contents('https://www.tongleer.com/api/interface/TleEmailCheck.php?action=update&version=3');
 		echo $version;
 		?>
 		<form method="get" action="">
