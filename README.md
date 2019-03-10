@@ -17,7 +17,6 @@
 #### 与我联系：
 作者：二呆<br />
 网站：http://www.tongleer.com/<br />
-Q群：770956878<br />
 Github：https://github.com/muzishanshi/TleEmailCheck
 
 #### 更新记录：
