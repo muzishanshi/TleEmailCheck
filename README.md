@@ -1,9 +1,9 @@
 ### TleEmailCheckForWordpress邮箱验证插件
 ---
 
-TleEmailCheck插件使用更加通用的发送邮件方式，实现带密码、邮箱验证码注册用户的功能，因修改密码、修改邮箱时，WordPress系统会自动发邮件进行验证，所以没必要在修改个人信息时增加邮箱验证，此插件解决了邮件不能发送成功的问题。
+TleEmailCheckForWordpress插件使用更加通用的发送邮件方式，实现带密码、邮箱验证码注册用户的功能，此插件解决了在localhost邮件不能发送成功的问题。
 
-<img src="http://me.tongleer.com/content/uploadfile/201706/008b1497454448.png">
+<img src="https://me.tongleer.com/content/uploadfile/201706/008b1497454448.png">
 
 #### 使用方法：
 
@@ -23,6 +23,11 @@ TleEmailCheck插件使用更加通用的发送邮件方式，实现带密码、�
 	Github：https://github.com/muzishanshi/TleEmailCheck
 
 #### 更新记录：
+
+2019-12-22 V1.0.5
+
+	增加jquery是否加载的开关和是否显示密码框的开关；
+	修复安全类型select中option的关键字selected。
 
 2019-08-26 V1.0.3
 

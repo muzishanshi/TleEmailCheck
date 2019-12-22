@@ -2,17 +2,21 @@
 /* 
 Plugin Name: TleEmailCheck
 Plugin URI: https://github.com/muzishanshi/TleEmailCheck
-Description:  TleEmailCheck插件使用更加通用的发送邮件方式，实现带密码、邮箱验证码注册用户的功能，因修改密码、修改邮箱时，WordPress系统会自动发邮件进行验证，所以没必要在修改个人信息时增加邮箱验证，此插件解决了邮件不能发送成功的问题。
-Version: 1.0.4
+Description: TleEmailCheckForWordpress插件使用更加通用的发送邮件方式，实现带密码、邮箱验证码注册用户的功能，此插件解决了在localhost邮件不能发送成功的问题。
+Version: 1.0.5
 Author: 二呆
 Author URI: http://www.tongleer.com
 License: 
 */
-define("TLE_EMAIL_CHECK_VERSION",4);
+define("TLE_EMAIL_CHECK_VERSION",5);
 add_action( 'register_form', 'tle_email_check_form' );
 function tle_email_check_form() {
+	$tleEmailCheck_configs = get_settings('tle_email_check');
 	?>
+	<?php if($tleEmailCheck_configs["isEnableJQuery"]=="y"){?>
 	<script src="https://libs.baidu.com/jquery/1.11.1/jquery.min.js"></script>
+	<?php }?>
+	<?php if($tleEmailCheck_configs["isAddPassword"]=="y"){?>
 	<p>
 		<label for="password">密码<br/>
 			<input id="password" class="input" type="password" tabindex="30" size="25" value="" name="password" />
@@ -23,10 +27,12 @@ function tle_email_check_form() {
 			<input id="repeat_password" class="input" type="password" tabindex="40" size="25" value="" name="repeat_password" />
 		</label>
     </p>
+	<?php }?>
 	<p>
 		<label>邮箱验证码&nbsp;&nbsp;<button type="button" id="sendsmsmsg">发送</button><br />
 			<input type="text" name="emailcode" id="emailcode" class="input" size="25" tabindex="20" />
 			<input type="hidden" name="sitetitle" id="sitetitle" value="<?=bloginfo('name');?>" class="input" size="25" tabindex="20" />
+			<input type="hidden" id="isAddPassword" value="<?=$tleEmailCheck_configs["isAddPassword"];?>" />
 		</label>
 	</p>
 	<script>
@@ -69,19 +75,19 @@ function tle_email_check_form() {
 			alert("请输入用户名");
 			return false;
 		}
-		if($("#password").val()==""){
+		if($("#password").val()==""&&$("#isAddPassword").val()=="y"){
 			alert("请输入密码");
 			return false;
 		}
-		if($("#repeat_password").val()==""){
+		if($("#repeat_password").val()==""&&$("#isAddPassword").val()=="y"){
 			alert("请输入确认密码");
 			return false;
 		}
-		if($("#password").val()!=""&&$("#password").val().length<8){
+		if($("#password").val()!=""&&$("#password").val().length<8&&$("#isAddPassword").val()=="y"){
 			alert("密码长度至少8位");
 			return false;
 		}
-		if($("#password").val()!=$("#repeat_password").val()){
+		if($("#password").val()!=$("#repeat_password").val()&&$("#isAddPassword").val()=="y"){
 			alert("两次输入密码不相同");
 			return false;
 		}
@@ -103,15 +109,19 @@ function tle_email_check_form() {
 add_action( 'register_post', 'tle_email_check_validate', 10, 3 );
 function tle_email_check_validate( $sanitized_user_login, $user_email, $errors) {
 	session_start();
-	if (!isset($_POST[ 'emailcode' ]) || empty($_POST[ 'emailcode' ])) {
+	$tleEmailCheck_configs = get_settings('tle_email_check');
+	$emailcode = isset($_POST['emailcode']) ? addslashes(trim($_POST['emailcode'])) : '';
+	$password = isset($_POST['password']) ? addslashes(trim($_POST['password'])) : '';
+	$repeat_password = isset($_POST['repeat_password']) ? addslashes(trim($_POST['repeat_password'])) : '';
+	if (!isset($emailcode) || empty($emailcode)) {
 		return $errors->add( 'emailcodeempty', '<strong>错误</strong>: 请输入邮箱验证码。' );
-	} elseif (strcasecmp($_POST[ 'emailcode' ],$_SESSION['mailcode'])!=0) {
+	} elseif (strcasecmp($emailcode,$_SESSION['mailcode'])!=0) {
 		return $errors->add( 'emailcodefail', '<strong>错误</strong>: 邮箱验证码不正确。' );
-	}else if (empty($_POST[ 'password' ])) {
+	}else if (empty($password)&&$tleEmailCheck_configs["isAddPassword"]=="y") {
         return $errors->add( 'passwords_null', "<strong>错误</strong>: 请输入密码" );
-    }else if ( $_POST['password'] !== $_POST['repeat_password'] ) {
+    }else if ( $password !== $repeat_password &&$tleEmailCheck_configs["isAddPassword"]=="y") {
         return $errors->add( 'passwords_not_matched', "<strong>错误</strong>: 两次输入密码不相同" );
-    }else if ( $_POST[ 'password' ]!=""&&strlen( $_POST['password'] ) < 8 ) {
+    }else if ( $password!=""&&strlen( $password ) < 8 &&$tleEmailCheck_configs["isAddPassword"]=="y") {
         return $errors->add( 'password_too_short', "<strong>ERROR</strong>: 密码长度至少8位" );
     }else if(isset($_SESSION["newmail"])&&$user_email!=$_SESSION["newmail"]){
 		return $errors->add( 'user_email_error', "<strong>ERROR</strong>: 填写邮箱和发送验证码的邮箱不一致" );
@@ -120,20 +130,16 @@ function tle_email_check_validate( $sanitized_user_login, $user_email, $errors) 
 
 add_action( 'user_register', 'ts_email_check_password', 100 );
 function ts_email_check_password( $user_id ){
+	$password = isset($_POST['password']) ? addslashes(trim($_POST['password'])) : '';
     $userdata = array();
     $userdata['ID'] = $user_id;
-    if ( $_POST['password'] !== '' ) {
-        $userdata['user_pass'] = $_POST['password'];
+    if ( $password !== '' ) {
+        $userdata['user_pass'] = $password;
     }
     $new_user_id = wp_update_user( $userdata );
 	
 	//重置短信验证码
-	$randCode = '';
-	$chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHIJKLMNPRSTUVWXYZ23456789';
-	for ( $i = 0; $i < 5; $i++ ){
-		$randCode .= substr($chars, mt_rand(0, strlen($chars) - 1), 1);
-	}
-	$_SESSION['mailcode'] = strtoupper($randCode);
+	$_SESSION["mailcode"]=mt_rand(100000,999999);
 }
 
 add_filter( 'gettext', 'ts_email_check_password_text' );
@@ -143,21 +149,16 @@ function ts_email_check_password_text ( $text ) {
     }
     return $text;
 }
-
-if(isset($_GET['t'])){
-    if($_GET['t'] == 'configTleEmailCheck'){
-        update_option('tle_email_check', array('mailsmtp' => $_REQUEST['mailsmtp'], 'mailport' => $_REQUEST['mailport'], 'mailuser' => $_REQUEST['mailuser'], 'mailpass' => $_REQUEST['mailpass'], 'mailsecure' => $_REQUEST['mailsecure']));
+$tleEmailCheckT = isset($_GET['t']) ? addslashes(trim($_GET['t'])) : '';
+if(isset($tleEmailCheckT)){
+    if($tleEmailCheckT == 'configTleEmailCheck'){
+        update_option('tle_email_check', array('isEnableJQuery' => $_REQUEST['isEnableJQuery'], 'isAddPassword' => $_REQUEST['isAddPassword'], 'mailsmtp' => $_REQUEST['mailsmtp'], 'mailport' => $_REQUEST['mailport'], 'mailuser' => $_REQUEST['mailuser'], 'mailpass' => $_REQUEST['mailpass'], 'mailsecure' => $_REQUEST['mailsecure']));
     }
-	if($_GET['t'] == 'sendsms'){
+	if($tleEmailCheckT == 'sendsms'){
         session_start();
 		date_default_timezone_set('Asia/Shanghai');
 		//重置短信验证码
-		$randCode = '';
-		$chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHIJKLMNPRSTUVWXYZ23456789';
-		for ( $i = 0; $i < 5; $i++ ){
-			$randCode .= substr($chars, mt_rand(0, strlen($chars) - 1), 1);
-		}
-		$_SESSION['mailcode'] = strtoupper($randCode);
+		$_SESSION["mailcode"]=mt_rand(100000,999999);
 
 		$user_email = isset($_POST['user_email']) ? addslashes(trim($_POST['user_email'])) : '';//发送到的用户名
 		$sitetitle = isset($_POST['sitetitle']) ? addslashes(trim($_POST['sitetitle'])) : '';
@@ -168,7 +169,7 @@ if(isset($_GET['t'])){
 			echo $json;
 			exit;
 		}else{
-			$json=json_encode(array("error_code"=>-1,"message"=>"发送验证码失败"));
+			$json=json_encode(array("error_code"=>-1,"message"=>"发送验证码失败，请稍后再尝试。"));
 			echo $json;
 			exit;
 		}
@@ -208,29 +209,41 @@ function tle_email_check_menu(){
     add_options_page('邮箱验证', '邮箱验证', 'manage_options', 'tle-email-check', 'tle_email_check_options');
 }
 function tle_email_check_options(){
-    $weibo_configs = get_settings('tle_email_check');
+    $tleEmailCheck_configs = get_settings('tle_email_check');
 	?>
 	<div class="wrap">
 		<h2>邮箱验证设置:</h2>
 		<form method="get" action="">
 			<p>
-				smtp服务器:<br /><input type="text" name="mailsmtp" value="<?=$weibo_configs["mailsmtp"];?>" required placeholder="smtp服务器" size="50" /><br />已验证QQ企业邮箱和126邮箱可成功发送
+				是否加载jquery:<br />
+				<input type="radio"  value="n" name="isEnableJQuery" <?php if($tleEmailCheck_configs["isEnableJQuery"]=='n'){?>checked<?php }?>> 关闭
+				<input type="radio" value="y" name="isEnableJQuery" <?php if($tleEmailCheck_configs["isEnableJQuery"]!='n'){?>checked<?php }?>> 开启
+				<br />对于登陆页面已被其他插件加载jquery的可选择性关闭
 			</p>
 			<p>
-				smtp服务器端口:<br /><input type="text" name="mailport" value="<?=$weibo_configs["mailport"];?>" required placeholder="smtp服务器端口" size="50" /><br />465、25等
+				是否增加密码表单项:<br />
+				<input type="radio"  value="n" name="isAddPassword" <?php if($tleEmailCheck_configs["isAddPassword"]=='n'){?>checked<?php }?>> 关闭
+				<input type="radio" value="y" name="isAddPassword" <?php if($tleEmailCheck_configs["isAddPassword"]!='n'){?>checked<?php }?>> 开启
+				<br />对于其他插件已添加密码框的情况可选择性关闭
 			</p>
 			<p>
-				smtp服务器邮箱用户名：<br /><input type="text" name="mailuser" value="<?=$weibo_configs["mailuser"];?>" required placeholder="smtp服务器邮箱用户名" size="50" />
+				smtp服务器:<br /><input type="text" name="mailsmtp" value="<?=$tleEmailCheck_configs["mailsmtp"];?>" required placeholder="smtp服务器" size="50" /><br />已验证QQ、126、yandex邮箱可成功发送
 			</p>
 			<p>
-				smtp服务器邮箱密码：<br /><input type="password" name="mailpass" value="<?=$weibo_configs["mailpass"];?>" required placeholder="smtp服务器邮箱密码" size="50" />
+				smtp服务器端口:<br /><input type="text" name="mailport" value="<?=$tleEmailCheck_configs["mailport"];?>" required placeholder="smtp服务器端口" size="50" /><br />465、25等
+			</p>
+			<p>
+				smtp服务器邮箱用户名：<br /><input type="text" name="mailuser" value="<?=$tleEmailCheck_configs["mailuser"];?>" required placeholder="smtp服务器邮箱用户名" size="50" />
+			</p>
+			<p>
+				smtp服务器邮箱密码：<br /><input type="password" name="mailpass" value="<?=$tleEmailCheck_configs["mailpass"];?>" required placeholder="smtp服务器邮箱密码" size="50" />
 			</p>
 			<p>
 				安全类型：<br />
 				<select name="mailsecure">
-					<option value="ssl" <?=$weibo_configs["mailsecure"]=="ssl"?"checked":"";?>>ssl</option>
-					<option value="tls" <?=$weibo_configs["mailsecure"]=="tls"?"checked":"";?>>tls</option>
-					<option value="none" <?=$weibo_configs["mailsecure"]=="none"?"checked":"";?>>none</option>
+					<option value="ssl" <?=$tleEmailCheck_configs["mailsecure"]=="ssl"?"selected":"";?>>ssl</option>
+					<option value="tls" <?=$tleEmailCheck_configs["mailsecure"]=="tls"?"selected":"";?>>tls</option>
+					<option value="none" <?=$tleEmailCheck_configs["mailsecure"]=="none"?"selected":"";?>>none</option>
 				</select>
 			</p>
 			<p>
@@ -241,13 +254,15 @@ function tle_email_check_options(){
 		</form>
 		<h3>问答</h3>
 		<p>
-			<font color="red">1、为何注册页面按钮会点不动？</font><br />
-			如果注册页面按钮点不动，那就可能是jquery冲突了，查看各个插件有没有加载jquery，因为有点嫌原生js麻烦，不管删哪个里边的，保证不再冲突即可。<br />然后此插件仅仅实现了简单功能，可能会出现各种问题，对于smtp参数的填写，可以参考以下第二点提示信息即可。<br />
+			<font color="red">1、关于发送邮件问题</font><br />
+			（1）若发送邮件验证码失败，则可以考虑是否跟其他插件或主题目录functions.php中的配置有冲突；<br />
+			（2）关于smtp服务器和端口配置方法可联系diamond0422@qq.com以协助解决。<br />
 			<font color="red">2、SMTP搭配</font><br />
 			（1）smtp.exmail.qq.com:465	企业邮箱 	SSL	登陆密码<br />
 			（2）smtp.qq.com:465		个人邮箱 	SSL	授权码<br />
 			（3）smtp.126.com:465		个人邮箱	SSL	授权码<br />
 			（4）smtp.126.com:25		个人邮箱	SSL	登录密码<br />
+			（5）smtp.yandex.com:465			个人邮箱	SSL 登陆密码<br />
 			<font color="red">3、为何忘记密码、密码重置时，点击链接提示重置链接会无效？（我的WordPress版本是5.0）</font><br />
 			在wp-login.php中找到下面这段代码，大概在369行。<br />
 			<DIV class=dp-highlighter><DIV class=bar></DIV>
